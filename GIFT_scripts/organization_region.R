@@ -4,11 +4,19 @@ suppressPackageStartupMessages({
   library(data.table)
 })
 
-matched_file <- "/home/jyang51/YangLabData/aramani/TWAS2/Results/ALL_GENES_matched_combined_significant.txt"
-gene_coords_file <- "/home/jyang51/YangLabData/jyang/BGW_TPWAS_AD/Data/RNAseq_BulkBrain/ROSMAP_expr_TIGAR_format_WGS_IDs_b38_2023_chr1-22.tsv"
-output_sorted <- "/home/jyang51/YangLabData/aramani/GIFT/ALL_GENES_matched_sorted.txt"
-region_file <- "/home/jyang51/YangLabData/aramani/GIFT2/input1/region_from_matched.txt"
-base_region_dir <- "/home/jyang51/YangLabData/aramani/GIFT2/input1"
+if (file.exists("config.R")) {
+  source("config.R")
+} else if (file.exists("../config.R")) {
+  source("../config.R")
+} else {
+  stop("config.R not found. Copy config.example.R to config.R and edit paths.")
+}
+
+matched_file     <- MATCHED_FILE
+gene_coords_file <- GENE_COORDS_FILE
+output_sorted    <- OUTPUT_SORTED
+region_file      <- REGION_FILE
+base_region_dir  <- INPUT_BASE
 
 matched_data <- fread(matched_file)
 matched_sorted <- matched_data %>% arrange(CHROM, POS)

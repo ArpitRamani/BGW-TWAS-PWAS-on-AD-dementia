@@ -1,14 +1,21 @@
 library(data.table)
 library(dplyr)
 
-input5_base  <- "/home/jyang51/YangLabData/aramani/GIFT2/input1"
-input_base   <- "/home/jyang51/YangLabData/aramani/GIFT2/input1"
-geno_base    <- "/home/jyang51/YangLabData/aramani/BTARS/output"
-weights_base <- "/home/jyang51/YangLabData/jyang/BGW_TPWAS_AD/wkdir"
-region_file  <- file.path(input5_base, "region_from_matched.txt")
-gemma_dir    <- "/projects/YangLabData/qliu/GIFT/Final_input_revise/AD"
-prune_dir        <- "/projects/YangLabData/qliu/GIFT/ROSMAP_prune/prune/0.5"
-PRUNE_REGION_IDS <- c(3, 9, 11, 13)
+if (file.exists("config.R")) {
+  source("config.R")
+} else if (file.exists("../config.R")) {
+  source("../config.R")
+} else {
+  stop("config.R not found. Copy config.example.R to config.R and edit paths.")
+}
+
+input5_base  <- INPUT_BASE
+input_base   <- INPUT_BASE
+geno_base    <- GENO_BASE
+weights_base <- WEIGHTS_BASE
+region_file  <- REGION_FILE
+gemma_dir    <- GEMMA_DIR
+prune_dir    <- PRUNE_DIR
 
 dir.create(input_base, showWarnings = FALSE, recursive = TRUE)
 
@@ -128,7 +135,6 @@ for (rid in region_ids) {
   if (length(chr_vals) != 1) stop(paste0("region ", rid, ": multi-chr"))
   chr <- chr_vals[1]
 
-  # --- FIX: collect all chromosomes needed from weights (cis + trans) ---
   all_weight_chrs <- c()
   for (gene in region_dt$GeneName) {
     wf <- file.path(weights_base, gene, paste0(gene, "_BGW_xQTL_weights.txt"))
@@ -141,7 +147,6 @@ for (rid in region_ids) {
   message(sprintf("[region %s] loading GEMMA for chromosomes: %s",
                   rid, paste(sort(as.integer(all_weight_chrs)), collapse = ", ")))
 
-  # Load GEMMA for all relevant chromosomes and stack into one table
   gemma <- rbindlist(lapply(all_weight_chrs, function(c) {
     f <- file.path(gemma_dir, paste0("CHR", c, "_GEMMA.txt"))
     if (!file.exists(f)) {
@@ -153,7 +158,6 @@ for (rid in region_ids) {
     g[, ps  := suppressWarnings(as.integer(ps))]
     g
   }))
-  # --- END FIX ---
 
   eqtl_out_dir <- file.path(input9_region_dir, "final_input", "eQTL")
   dir.create(eqtl_out_dir, showWarnings = FALSE, recursive = TRUE)
@@ -209,7 +213,7 @@ for (rid in region_ids) {
     rownames(weights_matched) <- NULL
 
     eqtl_fmt        <- gwas_matched
-    eqtl_fmt$n_obs  <- 931
+    eqtl_fmt$n_obs  <- N_RNASEQ
     eqtl_fmt$af     <- weights_matched$MAF
     eqtl_fmt$beta   <- ifelse(is_flipped, -weights_matched$mBeta, weights_matched$mBeta)
     eqtl_fmt$se     <- abs(weights_matched$mBeta / sqrt(weights_matched$ChisqTest))
@@ -354,7 +358,7 @@ for (i in region_ids) {
     'Zscore2   <- convert$Zscore2',
     'LDmatrix1 <- convert$LDmatrix1',
     'LDmatrix2 <- convert$LDmatrix2',
-    'n1 <- 931',
+    paste0('n1 <- ', N_RNASEQ),
     'GWASresult <- read.table(GWASfile, header=TRUE)',
     'n2 <- mean(GWASresult[,5])',
     'R  <- as.matrix(read.table(paste0(final_input_dir, "/R_matrix.txt")))',
@@ -376,11 +380,11 @@ for (i in region_ids) {
     "#SBATCH --nodes=1",
     "#SBATCH --cpus-per-task=4",
     "#SBATCH --mem=32G",
-    "#SBATCH --partition=yanglab,day-long-cpu,week-long-cpu,month-long-cpu",
+    paste0("#SBATCH --partition=", SLURM_PARTITIONS),
     paste0("#SBATCH --output=", out_log_dir, "/GIFT_", region_name, ".out.txt"),
     paste0("#SBATCH --error=",  out_log_dir, "/GIFT_", region_name, ".err.txt"),
-    'source "/home/qliu259/miniconda3/etc/profile.d/conda.sh"',
-    'conda activate "/projects/YangLabData/qliu/Conda/r_env/"',
+    CONDA_INIT,
+    CONDA_ENV,
     paste0('Rscript "', rfile, '"')
   )
 

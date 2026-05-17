@@ -1,0 +1,36 @@
+# --- Local config (paths specific to your system) ---
+config.R
+config.sh
+
+# --- Data files (never commit these) ---
+*.vcf
+*.vcf.gz
+*.bed
+*.bim
+*.fam
+*.bgen
+*.geno.txt
+*.tsv
+*.RData
+*.rds
+*.Rdata
+
+# --- Generated outputs / region folders ---
+region*/
+output/
+logs/
+GIFT_running/
+
+# --- R / RStudio cruft ---
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj
+
+# --- macOS / editor cruft ---
+.DS_Store
+Thumbs.db
+*~
+.idea/
+.vscode/
