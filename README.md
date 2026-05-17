@@ -30,8 +30,6 @@ fine-mapping of TWAS signals.
 | `organization_region.R` | Region-level organization of inputs/results |
 | `test_input.sh` | Test driver for input pipeline |
 
-*(Update this table as files are added or refactored.)*
-
 ## Data
 
 - **Transcriptomics:** ROS/MAP DLPFC bulk RNA-seq (n = 931)
