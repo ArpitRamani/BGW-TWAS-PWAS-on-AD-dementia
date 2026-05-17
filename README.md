@@ -1,57 +1,99 @@
-# BGW-TWAS-PWAS-on-AD-dementia
+# Example GIFT input
 
-Bayesian Genome-wide TWAS and PWAS analyses of Alzheimer's Disease (AD) dementia,
-using ROS/MAP omics data from the dorsolateral prefrontal cortex (DLPFC) and
-GWAS summary statistics from Bellenguez et al. (Nature Genetics, 2022).
+This folder shows the structure and file formats the GIFT pipeline expects and
+produces. **All values here are synthetic** — sample IDs, rsIDs, positions,
+allele frequencies, effect sizes, and LD correlations are randomly generated.
+Real ROSMAP-derived data is governed by a DUA and cannot be shared.
 
-This repository contains analysis scripts for GIFT fine-mapping, BGW-TWAS, and
-BGW-PWAS.
+The example contains one region with two genes (`GENEA`, `GENEB`) and 14 SNPs
+total (8 in `GENEA`, 6 in `GENEB`) across 20 fake samples. Real runs use
+hundreds to thousands of SNPs per region across ~931 samples.
 
-## Background
+## Tree
 
-Standard TWAS tools (PrediXcan, FUSION, TIGAR) use only *cis*-eQTL information.
-Trans-eQTLs account for a substantial fraction of regulatory signal — over 30%
-of genes in whole blood and ~37% of trait-associated GWAS signals in eQTLGen —
-so methods that incorporate *trans*-xQTL effects can recover risk genes and
-biological pathways that cis-only methods miss.
+```
+region_example/
+├── GENEA_expr.txt              # per-gene expression: sample_id <tab> value
+├── GENEB_expr.txt
+├── GWAS.txt                    # stacked GWAS summary stats for all SNPs in region
+├── pindex.txt                  # SNP count per gene (one int per line, in gene order)
+├── region_example.geno.txt     # genotype matrix: SNP info + per-sample dosages
+├── snp_loc.txt                 # CHROM<tab>POS for each SNP
+├── snplist.txt                 # rsIDs, one per line (matches GWAS.txt row order)
+└── final_input/                # files consumed by GIFT_summary()
+    ├── eQTL/
+    │   ├── eQTLGENEA.txt       # eQTL summary stats for GENEA (same schema as GWAS.txt)
+    │   └── eQTLGENEB.txt
+    ├── GWAS.txt                # copy of region-level GWAS.txt
+    ├── GWASLD.txt              # SNP x SNP LD correlation matrix from GWAS reference
+    ├── LD_eQTL.txt             # SNP x SNP LD correlation matrix from eQTL reference
+    ├── R_matrix.txt            # gene x gene expression correlation matrix
+    ├── snplist.txt             # copy of region-level snplist.txt
+    ├── pindex.txt              # copy of region-level pindex.txt
+    └── output/                 # GIFT_summary() writes results here
+```
 
-**BGW-xWAS** (Luningham et al., AJHG, 2020) is a Bayesian variable selection
-regression framework that jointly models cis- and trans- xQTL effects using
-spike-and-slab priors, enabling genome-wide xWAS testing with either
-individual-level or summary-level GWAS data. **GIFT** is used here for
-fine-mapping of TWAS signals.
+## File schemas
 
-## Repository contents
+### `GWAS.txt` and `eQTL/eQTL<GENE>.txt`
 
-| File | Purpose |
-|------|---------|
-| `eQTL.R` | eQTL processing / analysis |
-| `newGIFTGEN.R` | GIFT input preparation |
-| `organization_region.R` | Region-level organization of inputs/results |
-| `test_input.sh` | Test driver for input pipeline |
+Tab-separated, with header. Columns:
 
-## Data
+| Column | Description |
+|---|---|
+| `chr` | Chromosome |
+| `rs` | rsID |
+| `ps` | Position (bp) |
+| `n_mis` | Number of missing genotypes |
+| `n_obs` | Sample size (GWAS: total N; eQTL: RNA-seq N) |
+| `allele1` | Effect allele |
+| `allelel0` | Reference allele *(note: column name uses two L's, matches GEMMA convention)* |
+| `af` | Allele frequency of effect allele |
+| `beta` | Effect size |
+| `se` | Standard error of beta |
+| `p_wald` | Wald p-value |
 
-- **Transcriptomics:** ROS/MAP DLPFC bulk RNA-seq (n = 931)
-- **Proteomics:** ROS/MAP DLPFC TMT mass spectrometry (n = 716)
-- **Genotypes:** ROS/MAP whole genome sequencing
-- **GWAS:** Bellenguez et al. 2022 (111,326 AD cases / 677,663 controls)
+SNP order in `eQTL<GENE>.txt` files matches the gene's slice of `GWAS.txt`,
+sized according to `pindex.txt`.
 
-Data are accessed under the relevant ROS/MAP and consortia data use agreements
-and are **not** included in this repository.
+### `snplist.txt`
 
-## Status
+One rsID per line, in the same order as `GWAS.txt` rows.
 
-Active development. Results, figures, and final documentation will be added in
-later commits.
+### `pindex.txt`
 
-## Citation
+Integer SNP count per gene, one per line, in the order genes appear in the
+region. Sum of values equals the number of rows in `GWAS.txt` / `snplist.txt`.
 
-Luningham JM, Chen J, Tang S, De Jager PL, Bennett DA, Buchman AS, Yang J.
-*Bayesian Genome-wide TWAS Method to Leverage both cis- and trans-eQTL
-Information through Summary Statistics.* Am J Hum Genet. 2020;107(4):714-726.
-[doi:10.1016/j.ajhg.2020.08.022](https://doi.org/10.1016/j.ajhg.2020.08.022)
+### `snp_loc.txt`
 
-## Contact
+CHROM and POS for each SNP. Tab-separated with header.
 
-Arpit Ramani — Yang Lab, Emory University School of Medicine.
+### `region_example.geno.txt`
+
+Genotype dosage matrix. First five columns are `CHROM`, `POS`, `ID`, `REF`,
+`ALT`; remaining columns are per-sample dosages (0, 1, or 2). Used to compute
+LD matrices.
+
+### `<GENE>_expr.txt`
+
+Per-gene expression, one sample per line. Two tab-separated columns:
+sample ID and expression value. No header. Sample IDs match the genotype
+matrix column names.
+
+### `R_matrix.txt`
+
+Gene x gene expression correlation matrix. Square, symmetric, 1s on diagonal.
+No header, no row names.
+
+### `GWASLD.txt` and `LD_eQTL.txt`
+
+SNP x SNP LD correlation matrix. Square, symmetric, 1s on diagonal. Same SNP
+order as `snplist.txt`. No header, no row names. In real runs these are
+~thousands x thousands; here they are 14 x 14.
+
+## Reproducing your own example
+
+The synthetic files here were generated with random values. To regenerate or
+adapt for testing, see the project README and run the pipeline against any
+test region of your choosing.
