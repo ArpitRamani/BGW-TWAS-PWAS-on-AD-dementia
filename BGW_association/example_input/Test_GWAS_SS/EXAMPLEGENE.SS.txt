@@ -1,0 +1,5 @@
+CHROM	POS	rsID	REF	ALT	Beta_gwas	Beta_sd_gwas	PVAL_gwas
+1	1000	rs1	A	G	0.05	0.02	0.012
+1	2000	rs2	C	T	-0.03	0.015	0.045
+2	5000	rs3	G	A	0.04	0.018	0.026
+2	6000	rs4	T	C	-0.02	0.012	0.096

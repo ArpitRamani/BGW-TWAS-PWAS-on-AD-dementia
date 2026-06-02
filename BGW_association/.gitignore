@@ -1,0 +1,20 @@
+# Local configuration (contains absolute paths to private / DUA-governed data)
+config.R
+config.sh
+
+# SLURM logs
+logs/
+*.out
+*.err
+
+# Generated association results (keep the directory, ignore contents)
+Results/*
+!Results/.gitkeep
+
+# Scratch / intermediate files from the genotype-generation step
+temp_files/
+
+# Editor / OS cruft
+.DS_Store
+.Rhistory
+.RData
